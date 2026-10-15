@@ -63,6 +63,9 @@ int main(void) {
             die("c2 dup2 stdout");
         }
 
+        close(pipe_p_c1[0]);
+        close(pipe_c1_c2[1]);
+
         close(pipe_p_c1[1]);
         close(pipe_c1_c2[0]);
         close(pipe_c2_p[0]);
@@ -81,26 +84,24 @@ int main(void) {
         die("fdopen");
     }
 
+    FILE *down = fdopen(pipe_c2_p[0], "r");
+    if (!down) die("fdopen");
+
     printf("Enter lines\n");
     while (fgets(line, sizeof(line), stdin) != NULL) {
         fputs(line, up);
         fflush(up);
+        if (fgets(line, sizeof(line), down) != NULL) {
+            fputs(line, stdout);
+        }
     }
 
     fclose(up);
-
-
-
-    
-
-    FILE *down = fdopen(pipe_c2_p[0], "r");
-    if (!down) die("fdopen");
 
     while (fgets(line, sizeof(line), down) != NULL) {
         fputs(line, stdout);
     }
     fclose(down);
-
     
     int status;
     if (waitpid(pid1, &status, 0) == -1) {
